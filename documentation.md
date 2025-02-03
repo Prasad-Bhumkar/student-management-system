@@ -99,15 +99,18 @@ frontend/
    VITE_API_URL=http://localhost:3001/api
    ```
 
-3. Start the development server:
-   ```bash
-   npm run dev
-   ```
-
-4. Start the mock server:
+3. Start the mock server:
    ```bash
    cd frontend
    node mock/server.js
+   ```
+
+4. 
+
+   Start the development server:
+   ```bash
+   cd frontend
+   npm run dev
    ```
 
 ## Demo Accounts
