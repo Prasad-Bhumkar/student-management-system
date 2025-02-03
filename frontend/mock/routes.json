@@ -1,0 +1,11 @@
+{
+  "/api/*": "/$1",
+  "/api/auth/login": "/auth/login",
+  "/api/auth/logout": "/auth/logout",
+  "/api/auth/me": "/auth/me",
+  "/api/students": "/students",
+  "/api/students/:id": "/students/:id",
+  "/api/students/:id/courses": "/students/:id/courses",
+  "/api/students/:id/schedule": "/students/:id/schedule",
+  "/api/students/:id/assignments": "/students/:id/assignments"
+}
