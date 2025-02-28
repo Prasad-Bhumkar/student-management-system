@@ -1,20 +1,13 @@
 import { useState } from 'react';
 import { useNavigate, useLocation, Navigate } from 'react-router-dom';
-import {
-  Container,
-  Box,
-  Paper,
-  Typography,
-  TextField,
-  Button,
-  FormControlLabel,
-  Checkbox,
-  Alert,
-  CircularProgress,
-} from '@mui/material';
+import EnhancedUI from '../components/ui/EnhancedUI';
 import { useAuth } from '../contexts/AuthContext';
-import { LoginCredentials } from '../types/auth';
 
+type LoginCredentials = {
+  email: string;
+  password: string;
+  rememberMe: boolean; // Ensure this is always a boolean
+};
 const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -22,11 +15,9 @@ const Login = () => {
   const [credentials, setCredentials] = useState<LoginCredentials>({
     email: '',
     password: '',
-    rememberMe: false,
+    rememberMe: false, // Ensure this is always a boolean
   });
   const [error, setError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
   const from = location.state?.from?.pathname || '/dashboard';
 
   if (isAuthenticated) {
@@ -36,21 +27,15 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    setIsSubmitting(true);
-
     try {
-      // Trim email and password before submission
-      const trimmedCredentials = {
-        ...credentials,
-        email: credentials.email.trim(),
-        password: credentials.password.trim(),
-      };
-      await login(trimmedCredentials);
+      await login(credentials);
       navigate(from, { replace: true });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Invalid email or password');
-    } finally {
-      setIsSubmitting(false);
+      if (!navigator.onLine) {
+        setError('Network error: Please check your internet connection.');
+      } else {
+        setError(err instanceof Error ? err.message : 'An unexpected error occurred.');
+      }
     }
   };
 
@@ -63,137 +48,16 @@ const Login = () => {
   };
 
   if (isLoading) {
-    return (
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          minHeight: '100vh',
-        }}
-      >
-        <CircularProgress />
-      </Box>
-    );
+    return <div>Loading...</div>;
   }
 
   return (
-    <Container component="main" maxWidth="xs">
-      <Box
-        sx={{
-          minHeight: '100vh',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-        }}
-      >
-        <Paper
-          elevation={3}
-          sx={{
-            p: 4,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-          }}
-        >
-          <Typography component="h1" variant="h5" sx={{ mb: 3 }}>
-            Student Management System
-          </Typography>
-
-          {error && (
-            <Alert severity="error" sx={{ width: '100%', mb: 2 }}>
-              {error}
-            </Alert>
-          )}
-
-          <Box component="form" onSubmit={handleSubmit} sx={{ width: '100%' }}>
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              id="email"
-              label="Email Address"
-              name="email"
-              autoComplete="email"
-              autoFocus
-              value={credentials.email}
-              onChange={handleChange}
-              disabled={isSubmitting}
-              // Add onBlur to trim whitespace while typing
-              onBlur={(e) => {
-                const trimmed = e.target.value.trim();
-                if (trimmed !== e.target.value) {
-                  setCredentials(prev => ({
-                    ...prev,
-                    email: trimmed
-                  }));
-                }
-              }}
-            />
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              name="password"
-              label="Password"
-              type="password"
-              id="password"
-              autoComplete="current-password"
-              value={credentials.password}
-              onChange={handleChange}
-              disabled={isSubmitting}
-              // Add onBlur to trim whitespace while typing
-              onBlur={(e) => {
-                const trimmed = e.target.value.trim();
-                if (trimmed !== e.target.value) {
-                  setCredentials(prev => ({
-                    ...prev,
-                    password: trimmed
-                  }));
-                }
-              }}
-            />
-            <FormControlLabel
-              control={
-                <Checkbox
-                  name="rememberMe"
-                  color="primary"
-                  checked={credentials.rememberMe}
-                  onChange={handleChange}
-                  disabled={isSubmitting}
-                />
-              }
-              label="Remember me"
-            />
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              sx={{ mt: 3, mb: 2 }}
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <CircularProgress size={24} color="inherit" />
-              ) : (
-                'Sign In'
-              )}
-            </Button>
-          </Box>
-
-          <Box sx={{ mt: 2, width: '100%' }}>
-            <Typography variant="body2" color="text.secondary" align="center">
-              Demo Accounts:
-            </Typography>
-            <Typography variant="body2" color="text.secondary" align="center">
-              Admin: admin@example.com / admin123
-            </Typography>
-            <Typography variant="body2" color="text.secondary" align="center">
-              Student: john.doe@example.com / student123
-            </Typography>
-          </Box>
-        </Paper>
-      </Box>
-    </Container>
+    <EnhancedUI
+      onSubmit={handleSubmit}
+      error={error}
+      credentials={credentials}
+      handleChange={handleChange}
+    />
   );
 };
 

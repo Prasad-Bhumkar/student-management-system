@@ -1,115 +1,78 @@
-const jsonServer = require('json-server');
-const path = require('path');
-const server = jsonServer.create();
-const router = jsonServer.router(path.join(__dirname, 'db.json'));
-const middlewares = jsonServer.defaults({ noCache: true });
-const auth = require('./auth');
+const express = require('express');
+const bodyParser = require('body-parser');
+const cors = require('cors');
+const { query } = require('../src/services/db');
 
-server.use(middlewares);
-server.use(jsonServer.bodyParser);
+const app = express();
+app.use(cors());
+app.use(bodyParser.json());
 
-// Add CORS headers and logging
-server.use((req, res, next) => {
-  res.header('Cache-Control', 'no-cache, no-store, must-revalidate');
-  res.header('Pragma', 'no-cache');
-  res.header('Expires', '0');
-  
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`, {
-    query: req.query,
-    headers: req.headers,
-    body: req.body
-  });
-  
-  next();
-});
-
-// Use auth middleware
-server.use(auth);
-
-// Protected routes
-server.get('/api/students/:id', (req, res) => {
-  const db = router.db.getState();
-  const student = db.students.find(s => s.id === req.params.id);
-
-  if (!student) {
-    res.status(404).json({ message: 'Student not found' });
-    return;
-  }
-
-  res.json(student);
-});
-
-server.get('/api/students/:id/courses', (req, res) => {
-  const db = router.db.getState();
-  const courses = db.courses.map(course => ({
-    ...course,
-    grade: course.id === 'CS101' ? 'A' : 'B+',
-    progress: course.id === 'CS101' ? 85 : 90
-  }));
-
-  res.json(courses);
-});
-
-server.get('/api/students/:id/schedule', (req, res) => {
-  const db = router.db.getState();
-  const courses = db.courses.map(course => ({
-    id: course.id,
-    name: course.name,
-    instructor: course.instructor,
-    schedule: course.schedule
-  }));
-
-  res.json(courses);
-});
-
-server.get('/api/students/:id/assignments', (req, res) => {
-  const db = router.db.getState();
-  const assignments = db.assignments.map(assignment => ({
-    ...assignment,
-    grade: assignment.id === '1' ? 95 : null,
-    submitted: assignment.id === '1'
-  }));
-
-  res.json(assignments);
-});
-
-server.get('/api/students', (req, res) => {
-  const db = router.db.getState();
+// API Endpoints
+app.get('/api/students', async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;
   const search = req.query.search || '';
-  
-  let students = [...db.students];
-  
+
+  let queryStr = 'SELECT * FROM students';
   if (search) {
-    const searchLower = search.toLowerCase();
-    students = students.filter(student => 
-      student.firstName.toLowerCase().includes(searchLower) ||
-      student.lastName.toLowerCase().includes(searchLower) ||
-      student.email.toLowerCase().includes(searchLower) ||
-      student.studentId.toLowerCase().includes(searchLower)
-    );
+    queryStr += ` WHERE firstName LIKE '%${search}%' OR lastName LIKE '%${search}%' OR email LIKE '%${search}%' OR studentId LIKE '%${search}%'`;
   }
-  
-  const startIndex = (page - 1) * limit;
-  const endIndex = startIndex + limit;
-  const paginatedStudents = students.slice(startIndex, endIndex);
-  
-  const response = {
-    students: paginatedStudents,
-    total: students.length,
-    page: page,
-    limit: limit
-  };
-  
-  res.json(response);
+  queryStr += ` LIMIT ${(page - 1) * limit}, ${limit}`;
+
+  try {
+    const results = await query(queryStr);
+    res.json(results);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-// Use default router for other routes
-server.use('/api', router);
+app.get('/api/students/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const results = await query('SELECT * FROM students WHERE id = ?', [id]);
+    if (results.length === 0) {
+      return res.status(404).json({ message: 'Student not found' });
+    }
+    res.json(results[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
+app.post('/api/students', async (req, res) => {
+  const studentData = req.body;
+  try {
+    const results = await query('INSERT INTO students SET ?', studentData);
+    res.status(201).json({ id: results.insertId, ...studentData });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.patch('/api/students/:id', async (req, res) => {
+  const { id } = req.params;
+  const studentData = req.body;
+  try {
+    await query('UPDATE students SET ? WHERE id = ?', [studentData, id]);
+    res.json({ id, ...studentData });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/students/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    await query('DELETE FROM students WHERE id = ?', [id]);
+    res.status(204).send();
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Start the server
 const port = 3001;
-server.listen(port, () => {
-  console.log(`JSON Server is running on port ${port}`);
-  console.log('Database state:', router.db.getState());
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
 });

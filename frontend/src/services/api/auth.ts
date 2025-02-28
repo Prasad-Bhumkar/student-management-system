@@ -3,7 +3,9 @@ import { LoginCredentials, AuthResponse, User } from '../../types/auth';
 
 const authApi = {
   login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
+    console.log('Logging in with credentials:', credentials);
     const response = await api.post('/api/auth/login', credentials);
+    console.log('Login response:', response);
     return response.data;
   },
 

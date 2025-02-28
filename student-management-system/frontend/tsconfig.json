@@ -1,0 +1,10 @@
+const createCredentialsTableSQL = `
+  CREATE TABLE credentials (
+    id SERIAL PRIMARY KEY, -- Auto-incrementing ID for each record
+    email VARCHAR(255) NOT NULL UNIQUE, -- User's email, must be unique
+    password VARCHAR(255) NOT NULL, -- User's hashed password
+    remember_me BOOLEAN DEFAULT FALSE, -- Whether the user opted for "remember me"
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Timestamp for when the record was created
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP -- Timestamp for when the record was last updated
+  );
+`;

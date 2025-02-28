@@ -90,7 +90,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const login = async (credentials: LoginCredentials) => {
     try {
       dispatch({ type: 'AUTH_START' });
-      const { user, token } = await authApi.login(credentials);
+      const response = await authApi.login(credentials);
+      console.log('Login response:', response);
+      const { user, token } = response;
       localStorage.setItem('token', token);
       dispatch({ type: 'AUTH_SUCCESS', payload: user });
     } catch (error) {

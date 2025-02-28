@@ -397,7 +397,7 @@ const Students = () => {
         }}
         onSubmit={handleFormSubmit}
         student={selectedStudent}
-        isLoading={createMutation.isPending || updateMutation.isPending}
+        isLoading={createMutation.isLoading || updateMutation.isLoading}
       />
 
       {/* Delete Confirmation Dialog */}
@@ -415,7 +415,7 @@ const Students = () => {
           <Button
             onClick={handleDeleteConfirm}
             color="error"
-            disabled={deleteMutation.isPending}
+            disabled={deleteMutation.isLoading}
           >
             Delete
           </Button>
